@@ -88,11 +88,11 @@ def tester_knn(test_set, ref_set, model, accuracy_calculator, split, log=True):
     ref_labels = ref_labels.squeeze(1)
 
     print("Computing accuracy...")
-    accuracies = accuracy_calculator.get_accuracy(test_embeddings, 
-        ref_embeddings,
+    accuracies = accuracy_calculator.get_accuracy(test_embeddings,
         test_labels,
+        ref_embeddings,
         ref_labels,
-        embeddings_come_from_same_source=False)
+        ref_includes_query=False)
 
     prec_1 = accuracies["precision_at_1"]
     if log:
