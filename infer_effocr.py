@@ -147,7 +147,7 @@ class EffOCR:
                 }
             else:
                 raise NotImplementedError
-            localizer = init_detector(localizer_config, localizer_checkpoint, device=device, cfg_options=loc_config)
+            localizer = init_detector(localizer_config, localizer_checkpoint, device=device) # , cfg_options=loc_config)
         else:
             cfg = LazyConfig.load(localizer_config)
             if lang == "en":
@@ -243,11 +243,25 @@ class EffOCR:
 
 
     @staticmethod
-    def mmdet_output_format(result):
+    def d2_output_format(result):
         outputs = result[0]
         classes = outputs["instances"].pred_classes.tolist()
         boxes = outputs["instances"].pred_boxes.tensor.tolist()
         scores = outputs["instances"].scores.tolist()
+        char_bboxes = [x + [scores[idx]] for idx, x in enumerate(boxes) if classes[idx]==0]
+        word_bboxes = [x + [scores[idx]] for idx, x in enumerate(boxes) if classes[idx]==1]
+        result = [[char_bboxes, word_bboxes]] if len(word_bboxes) > 0 else [[char_bboxes]]
+        return result
+
+
+    @staticmethod
+    def mmdet_output_format(result):
+        outputs = result.pred_instances
+        classes = outputs.labels.tolist()
+        boxes = outputs.bboxes.tolist()
+        scores = outputs.scores.tolist()
+        # char_bboxes = [x for idx, x in enumerate(boxes) if classes[idx]==0]
+        # word_bboxes = [x for idx, x in enumerate(boxes) if classes[idx]==1]
         char_bboxes = [x + [scores[idx]] for idx, x in enumerate(boxes) if classes[idx]==0]
         word_bboxes = [x + [scores[idx]] for idx, x in enumerate(boxes) if classes[idx]==1]
         result = [[char_bboxes, word_bboxes]] if len(word_bboxes) > 0 else [[char_bboxes]]
@@ -260,12 +274,13 @@ class EffOCR:
 
         if not self.d2:
             result = inference_detector(self.localizer, im)
+            result = self.mmdet_output_format(result)
         else:
             pil_image = Image.open(im).convert("RGB")
             d2_image = np.moveaxis(np.array(pil_image), -1, 0)
             with torch.inference_mode():
                 result = self.localizer([{'image': torch.from_numpy(d2_image)}])
-            result = self.mmdet_output_format(result)
+            result = self.d2_output_format(result)
 
         # organize results of localizer inference
 
