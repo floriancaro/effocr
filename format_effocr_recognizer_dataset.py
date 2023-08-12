@@ -167,7 +167,10 @@ def draw_single_char(ch, font, canvas_size, padding=0.):
     img = nn.ConstantPad2d(fill_area, fill_value)(img)
     img = img.squeeze(0)
     img = T.ToPILImage()(img)
-    img = img.resize((canvas_size, canvas_size), Image.ANTIALIAS)
+    if hasattr(Image, 'ANTIALIAS'):
+        img = img.resize((canvas_size, canvas_size), Image.ANTIALIAS)
+    else:
+        img = img.resize((canvas_size, canvas_size), Image.LANCZOS)
     return img
 
 
@@ -177,7 +180,12 @@ def draw_single_char_ascender(ch, font, canvas_size, padding=0.):
     draw = ImageDraw.Draw(img)
     draw.text((0,0), ch, (255, 255, 255), font=font)
     bbox = img.getbbox()
-    w, h = font.getsize(ch)
+    # https://pillow.readthedocs.io/en/latest/releasenotes/9.2.0.html#font-size-and-offset-methods
+    if hasattr(font, 'getsize'):
+        w, h = font.getsize(ch)
+    else:
+        left, top, right, bottom = font.getbbox(ch)
+        w, h = right - left, bottom - top
     x0, y0, x1, y1 = bbox
     vdist, hdist = y1-y0, x1-x0
     x0, y0, x1, h = x0-(hdist*padding), y0-(vdist*padding), x1+(hdist*padding), h+(vdist*padding)
