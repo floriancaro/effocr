@@ -459,6 +459,8 @@ if __name__ == "__main__":
         help="Evaluate in terms of normalized edit distance, as opposed to CER")
     parser.add_argument("--localizer_dir", type=str, default=None,
         help="Path to directory with localizer materials, e.g., weights, configs")
+    parser.add_argument("--localizer_config", type=str, default=None,
+        help="File name of localizer config")
     parser.add_argument("--rcnn_score_thr", type=float, default=0.3,
         help="Set RCNN head score threshold for detection for character objects")
     parser.add_argument("--rcnn_score_thr_word", type=float, default=0.3,
@@ -519,9 +521,12 @@ if __name__ == "__main__":
     loc_chkpt = os.path.join(args.localizer_dir, "best_bbox_mAP.pth") if \
         os.path.exists(os.path.join(args.localizer_dir, "best_bbox_mAP.pth")) \
             else os.path.join(args.localizer_dir, "model_best.pth")
-    loc_cfg = glob(os.path.join(args.localizer_dir, "*.py"))[0] if \
-        len(glob(os.path.join(args.localizer_dir, "*.py"))) > 0 else \
-            os.path.join(args.localizer_dir, "config.yaml")
+    if args.localizer_config is not None:
+        loc_cfg = glob(os.path.join(args.localizer_dir, args.localizer_config))
+    else:
+        loc_cfg = glob(os.path.join(args.localizer_dir, "*.py"))[0] if \
+            len(glob(os.path.join(args.localizer_dir, "*.py"))) > 0 else \
+                os.path.join(args.localizer_dir, "config.yaml")
 
     d2 = loc_cfg == os.path.join(args.localizer_dir, "config.yaml")
 
